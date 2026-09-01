@@ -152,7 +152,7 @@ class GeminiAssistant:
         self.client = genai.Client(api_key=api_key)
         self.model = "gemini-3.6-flash"
         self.system_instruction = """
-        You are EventOps AI, an intelligent assistant for event management.
+        You are Agentic AI, an intelligent assistant for event management.
         You can help users with event information, registrations, venues, speakers, and reminders.
 
         IMPORTANT RULES:
@@ -466,7 +466,7 @@ def init_db():
             db.session.add(Incident(title=title, description=desc, priority=priority))
         # --- Notifications ---
         notifications = [
-            ('admin@eventops.com', 'email', 'Welcome', 'Welcome to EventOps AI'),
+            ('admin@eventops.com', 'email', 'Welcome', 'Welcome to Agentic AI'),
             ('user@eventops.com', 'sms', 'Event Reminder', 'Your event starts tomorrow')
         ]
         for rec, ch, sub, msg in notifications:
