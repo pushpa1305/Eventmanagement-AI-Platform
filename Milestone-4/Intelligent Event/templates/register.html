@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Register — EventOps AI{% endblock %}
+{% block title %}Register — Agentic AI{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -47,6 +47,7 @@
     /* ---- Form fields ---- */
     .form-floating {
         margin-bottom: 1.5rem;
+        position: relative;
     }
     .form-floating > .form-control,
     .form-floating > .form-select {
@@ -64,6 +65,25 @@
     .form-floating > label {
         color: #6c757d;
         font-weight: 500;
+    }
+
+    /* ---- Password toggle eye ---- */
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        z-index: 10;
+        color: #6c757d;
+        background: transparent;
+        border: none;
+        padding: 0;
+        font-size: 1.2rem;
+        transition: color 0.2s ease;
+    }
+    .password-toggle:hover {
+        color: #0d6efd;
     }
 
     /* ---- Password strength meter ---- */
@@ -166,6 +186,18 @@
             display: none;
         }
     }
+
+    /* ---- Custom invalid feedback for confirm password ---- */
+    .confirm-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+    .confirm-feedback.show {
+        display: block;
+    }
 </style>
 {% endblock %}
 
@@ -198,11 +230,12 @@
                         <div class="invalid-feedback">Please enter a valid email.</div>
                     </div>
 
-                    <!-- Password -->
+                    <!-- Password (with toggle eye) -->
                     <div class="form-floating">
                         <input type="password" class="form-control" id="password" name="password"
                                placeholder="Password" required minlength="8">
                         <label for="password"><i class="bi bi-lock-fill me-2"></i>Password</label>
+                        <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
                         <div class="invalid-feedback">Password must be at least 8 characters.</div>
                         <!-- Password strength meter -->
                         <div class="password-strength mt-2">
@@ -216,6 +249,16 @@
                         <div id="passwordHelp" class="form-text">
                             <i class="bi bi-info-circle"></i> At least 8 characters, mix of letters, numbers, and symbols.
                         </div>
+                    </div>
+
+                    <!-- Confirm Password (with toggle eye) -->
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="confirmPassword" name="confirm_password"
+                               placeholder="Confirm Password" required>
+                        <label for="confirmPassword"><i class="bi bi-check-circle me-2"></i>Confirm Password</label>
+                        <i class="bi bi-eye-slash password-toggle" id="toggleConfirmPassword"></i>
+                        <div class="invalid-feedback">Please confirm your password.</div>
+                        <div class="confirm-feedback" id="confirmFeedback">Passwords do not match.</div>
                     </div>
 
                     <!-- Role Selection (with visual cards) -->
@@ -272,14 +315,33 @@
         const roleOptions = document.querySelectorAll('.role-option');
         roleOptions.forEach(opt => {
             opt.addEventListener('click', function(e) {
-                // Remove active class from all
                 roleOptions.forEach(o => o.classList.remove('active'));
-                // Add active to clicked
                 this.classList.add('active');
-                // Check the radio button inside
                 const radio = this.querySelector('input[type="radio"]');
                 if (radio) radio.checked = true;
             });
+        });
+
+        // ---- Toggle Password Visibility ----
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
+        });
+
+        // ---- Toggle Confirm Password Visibility ----
+        const toggleConfirm = document.getElementById('toggleConfirmPassword');
+        const confirm = document.getElementById('confirmPassword');
+
+        toggleConfirm.addEventListener('click', function() {
+            const type = confirm.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirm.setAttribute('type', type);
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
         });
 
         // ---- Password strength meter ----
@@ -289,35 +351,58 @@
         passwordInput.addEventListener('input', function() {
             const val = this.value;
             let strength = 0;
-            // Criteria
             if (val.length >= 8) strength += 1;
             if (/[a-z]/.test(val) && /[A-Z]/.test(val)) strength += 1;
             if (/\d/.test(val)) strength += 1;
             if (/[^a-zA-Z0-9]/.test(val)) strength += 1;
 
             let width = 0;
-            let color = '#dc3545'; // red
-            if (strength >= 4) { width = 100; color = '#198754'; } // green
-            else if (strength === 3) { width = 75; color = '#ffc107'; } // yellow
-            else if (strength === 2) { width = 50; color = '#fd7e14'; } // orange
-            else if (strength >= 1) { width = 25; color = '#dc3545'; } // red
+            let color = '#dc3545';
+            if (strength >= 4) { width = 100; color = '#198754'; }
+            else if (strength === 3) { width = 75; color = '#ffc107'; }
+            else if (strength === 2) { width = 50; color = '#fd7e14'; }
+            else if (strength >= 1) { width = 25; color = '#dc3545'; }
 
             strengthBar.style.width = width + '%';
             strengthBar.style.background = color;
+
+            // Also trigger confirm password check when password changes
+            checkPasswordMatch();
         });
+
+        // ---- Confirm password matching ----
+        const confirmInput = document.getElementById('confirmPassword');
+        const confirmFeedback = document.getElementById('confirmFeedback');
+
+        function checkPasswordMatch() {
+            const pass = passwordInput.value;
+            const confirmVal = confirmInput.value;
+            if (confirmVal === '') {
+                confirmFeedback.classList.remove('show');
+                confirmInput.setCustomValidity('');
+                return;
+            }
+            if (pass !== confirmVal) {
+                confirmFeedback.classList.add('show');
+                confirmInput.setCustomValidity('Passwords do not match.');
+            } else {
+                confirmFeedback.classList.remove('show');
+                confirmInput.setCustomValidity('');
+            }
+        }
+
+        confirmInput.addEventListener('input', checkPasswordMatch);
 
         // ---- Bootstrap form validation ----
         const form = document.getElementById('registerForm');
         form.addEventListener('submit', function(event) {
+            checkPasswordMatch();
             if (!form.checkValidity()) {
                 event.preventDefault();
                 event.stopPropagation();
             }
             form.classList.add('was-validated');
         }, false);
-
-        // ---- Toggle password visibility? (optional) ----
-        // We'll skip for simplicity, but you can add a toggle button.
 
     })();
 </script>
